@@ -6,12 +6,12 @@ if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]:
 }
 
 Set-Location $PSScriptRoot
-
-# Install OpenVPN
-& msiexec.exe `
-    /i "OpenVPN-2.5.5-I602-amd64.msi" `
-    ADDLOCAL=ALL `
-    /qb+ /norestart
+    
+Start-Process "msiexec.exe" -Wait -ArgumentList @(
+    '/i', "OpenVPN-2.5.5-I602-amd64.msi",
+    'ADDLOCAL=ALL',
+    '/qb+', '/norestart', '/passive'
+)
 
 # Copy Configuration
 Copy-Item -Force -Verbose `
