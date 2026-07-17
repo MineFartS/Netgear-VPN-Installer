@@ -10,13 +10,27 @@ Set-Location $PSScriptRoot
 # Install OpenVPN
 & msiexec.exe `
     /i "OpenVPN-2.5.5-I602-amd64.msi" `
-    ADDLOCAL=OpenVPN.Service,OpenVPN.PLAP.Register,Drivers.TAPWindows6,OpenVPN `
-    /qn /norestart /passive
+    ADDLOCAL=ALL `
+    /qb+ /norestart
 
 # Copy Configuration
 Copy-Item -Force -Verbose `
     -Path "config\*" `
     -Destination "C:\Program Files\OpenVPN\config\"
+
+# Patch profiles to fix the 'fragment' crash and enable Pre-Logon properties
+Get-ChildItem "C:\Program Files\OpenVPN\config\*.ovpn" | ForEach-Object {
+    $Content = Get-Content $_.FullName
+    $Content = $Content -replace '^(fragment\s.*)', '# $1'
+    $Content += "`n`n# Compatibility and Pre-Logon Configurations"
+    $Content += "`nallow-compression yes"
+    $Content += "`nmssfix 1360"
+    $Content += "`nmanagement 127.0.0.1 12345"
+    $Content += "`nmanagement-hold"
+    $Content += "`nmanagement-query-passwords"
+    $Content += "`nauth-retry interact"
+    Set-Content -Path $_.FullName -Value $Content -Force -Verbose
+}
 
 # Configure interface adapter
 $Adapter = Get-NetAdapter | Where-Object InterfaceDescription -like '*TAP*V9*'
